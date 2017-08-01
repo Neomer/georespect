@@ -1,0 +1,61 @@
+.center {
+    text-align: center;
+}
+.left {
+    text-align: left;
+}
+.right {
+    text-align: right;
+}
+.middle {
+    vertical-align: middle;
+}
+.top {
+    vertical-align: top;
+}
+.bottom {
+    vertical-align: bottom;
+}
+.map-container {
+    border: 1px solid #000;
+}
+.uppercase {
+    text-transform: uppercase;
+}
+.bold {
+    font-weight: bold;
+}
+.plan-header {
+    padding: 0px 40px;
+}
+
+.plan-header span {
+    color: #9c9c9c;
+    font-weight: bold;
+}
+#spanAddress {
+    text-decoration: underline;
+}
+.plan-map {
+    width: 90%;
+    height: 650px;
+    margin: auto;
+    padding: 0px;
+}
+.plan-footer {
+    
+}
+
+.balloon-texteditor {
+    margin: 10px;
+    width: 70px;
+}
+
+.balloon-texteditor input {
+    width: 70px;
+}
+
+#txtAddress {
+    display: none;
+    
+}

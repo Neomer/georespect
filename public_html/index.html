@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="jquery-3.2.1.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="style.css?3dfgb4voindsf3234">
+        <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+        <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEPiUyIgRu4MwjQTvu-b5GeIyTtIy0BCs&libraries=drawing" type="text/javascript"></script>
+
+        <link rel="stylesheet" media="screen" type="text/css" href="spectrum/spectrum.css" />
+        <script type="text/javascript" src="spectrum/spectrum.js?a=f2vsdfbssdfvsdfv34343"></script>
+        <script src="map_processor.js?a=f2sfgnfgnbgcdsmjfdfvsdmmjhjgh7mhj8fv34343"></script>
+    </head>
+    <body>
+        <div class="container-fluid top">
+            <div class="col-md-5 col-lg-4 left">
+                
+                    <div class="form-group">
+                        <label class="navigate-title" for="txtCoordinates">
+                            1.Введите адрес или координаты объекта для поиска на карте
+                        </label>
+                        <div>
+                            <input class="form-control mb-3 mr-sm-3 mb-sm-0" style="width:80%;display:inline-block;" type="text" id="txtCoordinates" name ="txtCoordinates"  placeholder="55°45′13″N 37°37′16″E" />
+                            <button class="btn btn-primary" type="button" id="btnSearch">Текст</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="navigate-title" for="radMaps">
+                            2.Выберите тип карты
+                        </label>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" id="radYandex" name ="radMaps" value="yandex" checked />
+                                Яндекс.Карты
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" id="radGoogle" name ="radMaps"  value="google" />
+                                Google.Карты
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="navigate-title" for="radTool">
+                            3.Обведите границы участка, нарисуйте линию трассы, добавьте подписи объектов и населенных пунктов для информативности
+                        </label>
+                        <div id="container-fluid top center row">
+                            <!--
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" id="radScale2000" name ="radTool" value="toolPolygon" />
+                                    Полигон
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" id="radScale2000" name ="radTool" value="toolPolyline" />
+                                    Линия
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" id="radScale2000" name ="radTool" value="toolText" />
+                                    Текст
+                                </label>
+                            </div>
+                            -->
+                            <button class="btn btn-default" type="button" id="toolPolygon">Полигон</button>
+                            <button class="btn btn-default" type="button" id="toolPolyline">Линия</button>
+                            <button class="btn btn-default" type="button" id="toolText">Текст</button>
+                            <div class="container-fluid top" style="margin-top: 5px;">
+                                <div class="row">
+                                    <span>Цвет контура:</span>
+                                    <input id="border-color" type="text" />
+                                </div>
+                            </div>
+                            <div class="container-fluid top" style="margin-top: 5px;">
+                                <div class="row">
+                                    <span>Цвет заливки:</span>
+                                    <input id="fill-color" type="text" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label class="navigate-title" for="radScale">
+                            4.Выберите масштаб для печати
+                        </label>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" id="radScale2000" name ="radScale" value="2000" checked />
+                                Масштаб 1:2000
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" id="radScale5000" name ="radScale"  value="5000" />
+                                Масштаб 1:5000
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" id="radScale10000" name ="radScale"  value="10000" />
+                                Масштаб 1:10000
+                            </label>
+                        </div>
+                        <div class="form-group">
+                           <label class="navigate-title">
+                               <span id="addressHelper">5.Внесите изменение в адрес объекта непосредственное в поле плана</span>
+                           </label>
+                        </div>
+                        <div class="form-group">
+                           <label class="navigate-title">
+                               6.Сохраните результат на Ваш компьютер
+                           </label>
+                            <button class="btn btn-primary" type="button" id="btnSave">Сохранить в PDF</button>
+                            <button class="btn btn-default" type="button" id="btnPrint">Отправить на печать</button>
+                        </div>
+                    </div>
+               
+            </div>
+            
+            <div class="col-md-7 col-lg-8 center map-container">
+                <div class="row">
+                    <div class="plan-header left">
+                        <h4 class="uppercase bold center">Ситуационный план</h4>
+                        <span>
+                            Земельный участок, расположенный по адресу:
+                        </span> <br />
+                        <input type="text" class="form-control" id="txtAddress" value="" />
+                        <span id="spanAddress">Введите адрес объекта</span>
+                    </div>
+                </div>
+                <div class="row center">
+                    <div class="plan-map" id="divMap">&nbsp;</div>
+                </div>
+                <div class=" row plan-footer center">
+                    <span id="spanScale">Масштаб 1:2000</span>
+                </div>
+            </div>
+        </div>
+        
+    </body>
+</html>
