@@ -202,6 +202,58 @@ function clearDrawingTool() {
     $('#toolPolygon').removeClass("btn-primary").addClass( "btn-default" );
 }
 
+function GoogleMenu(map) {
+    this.m = map;        
+    this.div_ = document.createElement('div');
+    this.div_.className = 'delete-menu';
+    this.div_.innerHTML = 'Delete';
+}
+
+GoogleMenu.prototype = new google.maps.OverlayView();
+GoogleMenu.prototype.onAdd = function() {
+    var div = document.createElement('div');
+    div.style.borderStyle = 'none';
+    div.style.borderWidth = '0px';
+    div.style.position = 'absolute';
+    div.innerHTML = 'fdffgffg';
+
+    this.div_ = div;
+    var panes = this.getPanes();
+    panes.overlayLayer.appendChild(div);
+};
+GoogleMenu.prototype.draw = function() {
+    var overlayProjection = this.getProjection();
+
+    // Retrieve the south-west and north-east coordinates of this overlay
+    // in LatLngs and convert them to pixel coordinates.
+    // We'll use these coordinates to resize the div.
+    var sw = overlayProjection.fromLatLngToDivPixel(this.bounds_.getSouthWest());
+    var ne = overlayProjection.fromLatLngToDivPixel(this.bounds_.getNorthEast());
+
+    // Resize the image's div to fit the indicated dimensions.
+    var div = this.div_;
+    div.style.left = sw.x + 'px';
+    div.style.top = ne.y + 'px';
+    div.style.width = (ne.x - sw.x) + 'px';
+    div.style.height = (sw.y - ne.y) + 'px';
+};
+GoogleMenu.prototype.onRemove = function() {
+    this.div_.parentNode.removeChild(this.div_);
+    this.div_ = null;
+};
+this.setMap(this.m);
+
+function open() {
+    console.log('GoogleMenu::open()');
+    this.setMap(this.m);
+    this.draw();
+}
+
+function close() {
+    console.log('GoogleMenu::close()');
+    this.setMap(null);
+}
+
 
 class YaMap extends IMap {
     constructor(div) {
@@ -717,8 +769,11 @@ class GMap extends IMap {
         super(div);
         this.counter = 0;
         this.setObject(null);
+        this.vertexMenu = new GoogleMenu();
+
     }
     
+
     initialize() {
         var scale = $("input[name=radScale]:checked").val();
         switch (scale)
@@ -753,11 +808,8 @@ class GMap extends IMap {
         });
         this.gcoder = new GoogleGeoCoder();
         var instance = this;
-        google.maps.event.addListener(this.m, 'rightclick', function() {
-           if (instance.getObject() !== null)
-           {
-               instance.getObject().setMap(null);
-           }
+        google.maps.event.addListener(this.m, 'rightclick', function(e) {
+            instance.vertexMenu.open();
         });
     }
 
@@ -845,19 +897,28 @@ class GMap extends IMap {
             polyline.getPath().push(e.latLng);
         });
 
-        var removeEvent = google.maps.event.addListener(polyline, 'rightclick', function() {
-           if (instance.getObject() !== null)
-           {
-               instance.getObject().setMap(null);
-           }
+        var removeEvent = google.maps.event.addListener(polyline, 'rightclick', function(e) {
+            if (e.vertext == undefined)
+            {
+                return;
+            }
+
         });
 
         var listenerStopDraw = google.maps.event.addListener(polyline, 'dblclick', function(e) {
-            polyline.setEditable(false);
-            polyline.setDraggable(false);
-            google.maps.event.removeListener(listenerDraw);
-            google.maps.event.removeListener(listenerStopDraw);
-            clearDrawingTool();
+            var state = polyline.editable;
+            polyline.setEditable(!state);
+            polyline.setDraggable(!state);
+            if (polyline.editable)
+            {
+                //google.maps.event.removeListener(listenerStopDraw);
+                google.maps.event.removeListener(listenerDraw);
+                clearDrawingTool();
+            }
+            else
+            {
+                google.maps.event.addListener(listenerDraw);
+            }
         });
 
     }
