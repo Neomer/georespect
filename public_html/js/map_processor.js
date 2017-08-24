@@ -1,164 +1,3 @@
-class Brush {
-    constructor() {
-        this.c = '#880000bb';
-        this.w = 3;
-        this.c2 = '#bb0000bb'
-    }
-    
-    get color() {
-        return this.c;
-    }
-    
-    set color(val) {
-        this.c = val;
-    }
-    
-    get colorHex() {
-        return this.c.substr(0, this.c.length - 2);
-    }
-
-    get colorA() {
-        return parseInt(this.c.substr(this.c.length - 2, 2), 16);
-    }
-    
-    get width() {
-        return this.w;
-    }
-    
-    set width(val) {
-        this.w = val;
-    }
-    
-    get fillcolor() {
-        return this.c2;
-    }
-    
-    get fillcolorHex() {
-        return this.c2.substr(0, this.c.length - 2);
-    }
-    
-    get fillcolorA() {
-        return parseInt(this.c2.substr(this.c2.length - 2, 2), 16);
-    }
-
-    set fillcolor(val) {
-        this.c2 = val;
-    }
-}
-class IMap {
-    constructor(div) {
-        this.d = div;
-        this.b = new Brush();
-    }
-
-    get div() {
-        return this.d;
-    }
-    get currentElement() {
-        return this.e;
-    }
-    
-    set currentElement(obj) {
-        this.e = obj;
-    }
-
-    setObject(obj)
-    {
-        this.p = obj;
-    }
-    
-    getObject()
-    {
-        return this.p;
-    }
-    
-    get brush() {
-        return this.b;
-    }
-    
-    set brush(val) {
-        this.b = val;
-    }
-    
-
-    initialize() {
-        throw new Error("Calling method initialize() of abstract class IMap!");
-    }
-    
-    destroy() {
-        throw new Error("Calling method destroy() of abstract class IMap!");
-    }
-    
-    createPolygon() {
-        throw new Error("Calling method createPolygon() of abstract class IMap!");
-    }
-    
-    get center() {
-        throw new Error("Calling method center() of abstract class IMap!");
-    }
-    
-    set center(coords) {
-        throw new Error("Calling method center() of abstract class IMap!");
-    }
-    
-    geocode(map, address) {
-        throw new Error("Calling method geocode() of abstract class IMap!");
-    }
-    
-    placeText() {
-        throw new Error("Calling method placeText() of abstract class IMap!");
-    }
-    placePolygon() {
-        throw new Error("Calling method placePolygon() of abstract class IMap!");
-    }
-    placePolyline() {
-        throw new Error("Calling method placePolyline() of abstract class IMap!");
-    }
-    
-    scale2000() {
-        throw new Error("Calling method scale2000() of abstract class IMap!");
-    }
-    
-    scale5000() {
-        throw new Error("Calling method scale5000() of abstract class IMap!");
-    }
-    
-    scale10000() {
-        throw new Error("Calling method scale10000() of abstract class IMap!");
-    }
-    
-    get zoom() {
-        throw new Error("Calling method zoom() of abstract class IMap!");
-    }
-    
-}    
-class IGeoCoder {
-    constructor() {
-        
-    }
-    
-    find(map, address) {
-        throw new Error("Calling method find() of abstract class IGeoCoder!");
-    }
-}
-class IGeoObject {
-    constructor() {
-
-    }
-    
-    create() {
-        throw new Error("Calling method create() of abstract class IGeoObject!");
-    }
-    
-    enableEditting() {
-        throw new Error("Calling method enableEditting() of abstract class IGeoObject!");
-    }
-
-    disableEditting() {
-        throw new Error("Calling method disableEditting() of abstract class IGeoObject!");
-    }
-}
-
 class YaGeoCoder extends IGeoCoder {
     constructor() {
         super();
@@ -202,58 +41,47 @@ function clearDrawingTool() {
     $('#toolPolygon').removeClass("btn-primary").addClass( "btn-default" );
 }
 
-function GoogleMenu(map) {
-    this.m = map;        
-    this.div_ = document.createElement('div');
-    this.div_.className = 'delete-menu';
-    this.div_.innerHTML = 'Delete';
+class GGeoObject extends IGeoObject 
+{
+    constructor(map, object) {
+        super(map, object);
+        this.e = [];
+        this.show();
+    }
+    
+    enableEditting() {
+        //super.instance.set
+    }
+
+    disableEditting() {
+    }
+    
+    show() {
+        // включаем обработчики событий
+        for (var i = 0; i < this.e.length; i++)
+        {
+            google.maps.event.addListener(this.e[i]);
+        }
+        super.instance.setMap(super.map);
+    }
+    
+    hide() {
+        // отключаем обработчики событий
+        for (var i = 0; i < this.e.length; i++)
+        {
+            google.maps.event.removeListener(this.e[i]);
+        }
+        super.instance.setMap(null);
+    }
+    
+    addMapEvent(event, proc) {
+        this.e.push(google.maps.event.addListener(super.map, event, proc));
+    }
+    
+    addElementEvent(event, proc) {
+        this.e.push(google.maps.event.addListener(super.instance, event, proc));
+    }
 }
-
-GoogleMenu.prototype = new google.maps.OverlayView();
-GoogleMenu.prototype.onAdd = function() {
-    var div = document.createElement('div');
-    div.style.borderStyle = 'none';
-    div.style.borderWidth = '0px';
-    div.style.position = 'absolute';
-    div.innerHTML = 'fdffgffg';
-
-    this.div_ = div;
-    var panes = this.getPanes();
-    panes.overlayLayer.appendChild(div);
-};
-GoogleMenu.prototype.draw = function() {
-    var overlayProjection = this.getProjection();
-
-    // Retrieve the south-west and north-east coordinates of this overlay
-    // in LatLngs and convert them to pixel coordinates.
-    // We'll use these coordinates to resize the div.
-    var sw = overlayProjection.fromLatLngToDivPixel(this.bounds_.getSouthWest());
-    var ne = overlayProjection.fromLatLngToDivPixel(this.bounds_.getNorthEast());
-
-    // Resize the image's div to fit the indicated dimensions.
-    var div = this.div_;
-    div.style.left = sw.x + 'px';
-    div.style.top = ne.y + 'px';
-    div.style.width = (ne.x - sw.x) + 'px';
-    div.style.height = (sw.y - ne.y) + 'px';
-};
-GoogleMenu.prototype.onRemove = function() {
-    this.div_.parentNode.removeChild(this.div_);
-    this.div_ = null;
-};
-this.setMap(this.m);
-
-function open() {
-    console.log('GoogleMenu::open()');
-    this.setMap(this.m);
-    this.draw();
-}
-
-function close() {
-    console.log('GoogleMenu::close()');
-    this.setMap(null);
-}
-
 
 class YaMap extends IMap {
     constructor(div) {
@@ -764,16 +592,89 @@ class YaMap2 extends IMap {
     }
 }
 
+function GMainMenu() 
+{
+    this.div_ = document.createElement('div');
+    this.div_.className = 'map-menu';
+    this.div_.innerHTML = '';
+    this.e = [];
+
+    var menu = this;
+   
+    this.add = function(text, proc) {
+        var div = document.createElement('div');
+        div.className = 'map-menu-element';
+        div.innerHTML = text;
+        this.div_.appendChild(div);
+        google.maps.event.addDomListener(div, 'click', function() {console.log('test');});
+    }
+}
+
 class GMap extends IMap {
     constructor(div) {
         super(div);
         this.counter = 0;
         this.setObject(null);
-        this.vertexMenu = new GoogleMenu();
 
+        var menu = this.mnu;
+        var instance = this;
+
+        GMainMenu.prototype = new google.maps.OverlayView();
+        GMainMenu.prototype.onAdd = function() {
+            var menu = this;
+            var map = this.getMap();
+            this.getPanes().floatPane.appendChild(this.div_);
+            this.divListener_ = google.maps.event.addDomListener(map.getDiv(), 'mousedown', function(e) {
+              if (e.target != menu.div_) {
+                menu.close();
+              }
+            }, true);
+        };
+        GMainMenu.prototype.onRemove = function() {
+            google.maps.event.removeListener(this.divListener_);
+            this.div_.parentNode.removeChild(this.div_);
+            this.set('position');
+            this.set('path');
+            this.set('vertex');
+        };
+        GMainMenu.prototype.close = function() {
+            this.setMap(null);
+        };
+        GMainMenu.prototype.draw = function() {
+            var position = this.get('position');
+            /*
+            var projection = this.getProjection();
+
+            if (!position || !projection) {
+              return;
+            }
+
+            var point = projection.fromLatLngToDivPixel(position);
+            this.div_.style.top = point.y + 'px';
+            this.div_.style.left = point.x + 'px';
+            */
+            //console.log(position);
+            this.div_.style.top = position.y + 'px';
+            this.div_.style.left = position.x + 'px';
+        };
+        GMainMenu.prototype.open = function(map, position) {
+            this.set('position', position);
+            this.setMap(map);
+            this.draw();
+        };
+        GMainMenu.prototype.removeVertex = function() {
+            this.close();
+        }
+
+        this.mnu = new GMainMenu();
+        this.mnu.add('Закончить рисование', function() {
+            console.log('Заканчиваем рисование!');
+        });
+        this.mnu.add('Удалить объект', function() {
+            console.log('Удалить объект!');
+        });
     }
     
-
     initialize() {
         var scale = $("input[name=radScale]:checked").val();
         switch (scale)
@@ -798,7 +699,7 @@ class GMap extends IMap {
             disableDefaultUI: true,
             draggableCursor:'default',
             scrollwheel: false,
-            disableDoubleClickZoom: true, // <---
+            disableDoubleClickZoom: true, 
             zoomControl: false,
             mapTypeControl: true,
             scaleControl: true,
@@ -808,9 +709,23 @@ class GMap extends IMap {
         });
         this.gcoder = new GoogleGeoCoder();
         var instance = this;
+        var map = this.m;
         google.maps.event.addListener(this.m, 'rightclick', function(e) {
-            instance.vertexMenu.open();
+            //console.log(e);
+            instance.mnu.open(map, e.pixel);
+            //instance.stopEditting();
         });
+    }
+    
+    startEditting() {
+        this.m.setOptions({ draggableCursor: 'crosshair' });
+    }
+    // Отключаем редактирование
+    stopEditting() {
+        if (this.getObject() !== null)
+        {
+
+        }
     }
 
     destroy() {
@@ -879,7 +794,7 @@ class GMap extends IMap {
     placePolyline() {
         var map = this.m;
         var instance = this;
-        var polyline = new google.maps.Polyline(
+        var polyline = new GGeoObject(map, new google.maps.Polyline(
             {
                 path: [],
                 geodesic: true,
@@ -888,21 +803,22 @@ class GMap extends IMap {
                 strokeWeight: 3,
                 draggable: true, 
                 editable: true
-            });
+            }));
+        this.setObject(polyline);
+        this.startEditting();
         
-        polyline.setMap(this.m);
-        this.setObject(polyline)
-        
-        var listenerDraw = google.maps.event.addListener(this.m, 'click', function(e) {
-            polyline.getPath().push(e.latLng);
+        polyline.addMapEvent('click', function(e) {
+            console.log(polyline);
+            polyline.instance.getPath().push(e.latLng);
         });
 
-        var removeEvent = google.maps.event.addListener(polyline, 'rightclick', function(e) {
-            if (e.vertext == undefined)
+        polyline.addElementEvent('rightclick', function(e) {
+            //console.log(e);
+            if (e.vertex !== undefined)
             {
-                return;
+                console.log("Remove vertex " + e.vertex);
+                polyline.instance.setPath(polyline.instance.getPath().removeAt(e.vertex));
             }
-
         });
 
         var listenerStopDraw = google.maps.event.addListener(polyline, 'dblclick', function(e) {
@@ -911,7 +827,6 @@ class GMap extends IMap {
             polyline.setDraggable(!state);
             if (polyline.editable)
             {
-                //google.maps.event.removeListener(listenerStopDraw);
                 google.maps.event.removeListener(listenerDraw);
                 clearDrawingTool();
             }
