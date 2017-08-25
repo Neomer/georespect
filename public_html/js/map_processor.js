@@ -24,12 +24,15 @@ function clearDrawingTool() {
 
 class GMenu extends  google.maps.OverlayView
 {
-    constructor() 
+    constructor(element) 
     {
         super();
         this.div_ = document.createElement('div');
         this.div_.className = 'map-menu';
         this.div_.innerHTML = '';
+        this.m = null; // карта
+        this.e = null; // элемент, к котрому привязано меню
+        this.oe = null; // эвент на открытие меню
     }
     
     onAdd () 
@@ -61,18 +64,44 @@ class GMenu extends  google.maps.OverlayView
 
     close() 
     {
-        this.setMap(null);
+        printTrace('GMenu::close()');
+        super.setMap(null);
     }
 
     open (map, position) 
     {
+        printTrace('GMenu::open(map, position)');
         this.set('position', position);
-        this.setMap(map);
+        super.setMap(map);
         this.draw();
+        var instance = this;
+        google.maps.event.addListener(map, 'mousedown', function(e) {
+            //printTrace('google.maps.event.addListener()::mousedown ' + e.latLng.lat() + ' ' + e.latLng.lng());
+            //instance.close();
+        });
+    }
+
+    // Задаем карту
+    setMap(map) 
+    {
+        this.m = map;
+    }
+
+    // Задаем элемент на который нужно кликнуть для открытия меню
+    setElement(element)
+    {
+        this.e = element;
+        var instance = this;
+        var map = this.m;
+        this.oe = google.maps.event.addListener(element, 'rightclick', function(e) {
+            printTrace('google.maps.event.addListener()::rightclick ' + e.latLng.lat() + ' ' + e.latLng.lng());
+            instance.open(map, e.latLng);
+        });
     }
 
     add(text, proc) 
     {
+        printTrace('GMenu::add(text, proc) ' + text);
         var div = document.createElement('div');
         div.className = 'map-menu-element';
         div.innerHTML = text;
@@ -89,10 +118,17 @@ class GGeoObject extends IGeoObject
         this.e = [];
         this.show();
         this.mnu = new GMenu();
+        this.mnu.setMap(map);
+        this.mnu.setElement(object);
     }
+
+    get menu() { return this.mnu; }
     
     enableEditting() {
         printTrace('GGeoObject::enableEditting()');
+        this.enableEvents();
+        super.instance.setEditable(true);
+        super.instance.setDraggable(true);
     }
 
     disableEditting() {
@@ -110,15 +146,20 @@ class GGeoObject extends IGeoObject
             google.maps.event.removeListener(this.e[i]);
         }
     }
-    
-    show() {
-        printTrace('GGeoObject::show()');
+
+    enableEvents() {
+        printTrace('GGeoObject::enableEvents()');
         // включаем обработчики событий
         for (var i = 0; i < this.e.length; i++)
         {
             google.maps.event.addListener(this.e[i]);
         }
+    }
+    
+    show() {
+        printTrace('GGeoObject::show()');
         super.instance.setMap(super.map);
+        this.enableEvents();
     }
     
     hide() {
@@ -143,6 +184,7 @@ class GGeoObject extends IGeoObject
 
 class GMap extends IMap {
     constructor(div) {
+        printTrace('GMap::GMap()');
         super(div);
         this.counter = 0;
         this.setObject(null);
@@ -167,6 +209,7 @@ class GMap extends IMap {
     }
     
     initialize() {
+        printTrace('GMap::initialize()');
         var scale = $("input[name=radScale]:checked").val();
         switch (scale)
         {
@@ -199,20 +242,19 @@ class GMap extends IMap {
             fullscreenControl: false,
         });
         this.gcoder = new GoogleGeoCoder();
-        var instance = this;
-        var map = this.m;
-        google.maps.event.addListener(this.m, 'rightclick', function(e) {
-            printTrace('google.maps.event.addListener()::rightclick ' + e.pixel);
-            instance.mnu.close();
-            instance.mnu.open(map, e.latLng);
-        });
+        this.mnu.setMap(this.m);
+        this.mnu.setElement(this.m);
     }
     
-    startEditting() {
+    startEditting(obj) 
+    {
+        printTrace('GMap::startEditting(obj) ' + obj);
         this.m.setOptions({ draggableCursor: 'crosshair' });
+        this.setObject(obj);
     }
     // Отключаем редактирование
     stopEditting() {
+        printTrace('GMap::stopEditting()');
         if (this.getObject() !== null)
         {
             this.getObject().disableEditting();
@@ -252,7 +294,7 @@ class GMap extends IMap {
                 position: e.latLng,
                 map: map,
                 draggable: true,
-                editable: true
+                    editable: true
             });
             var infowindow = new google.maps.InfoWindow({
                 content: 
@@ -296,39 +338,24 @@ class GMap extends IMap {
                 draggable: true, 
                 editable: true
             }));
-        this.setObject(polyline);
-        this.startEditting();
         
+        this.startEditting(polyline);
+        
+        polyline.menu.add('Редактировать', function() { 
+            console.log('edit');
+            instance.startEditting(polyline);
+            polyline.enableEditting();
+            polyline.menu.close();
+        });
+        polyline.menu.add('Удалить', function() { 
+            console.log('remove');
+            polyline.menu.close();
+        });
+
         polyline.addMapEvent('click', function(e) {
-            //console.log(polyline);
             printTrace('Click at ' + e.latLng.lat() + ' ' + e.latLng.lng());
             polyline.instance.getPath().push(e.latLng);
         });
-
-        polyline.addElementEvent('rightclick', function(e) {
-            //console.log(e);
-            if (e.vertex !== undefined)
-            {
-                console.log("Remove vertex " + e.vertex);
-                polyline.instance.setPath(polyline.instance.getPath().removeAt(e.vertex));
-            }
-        });
-
-        var listenerStopDraw = google.maps.event.addListener(polyline, 'dblclick', function(e) {
-            var state = polyline.editable;
-            polyline.setEditable(!state);
-            polyline.setDraggable(!state);
-            if (polyline.editable)
-            {
-                google.maps.event.removeListener(listenerDraw);
-                clearDrawingTool();
-            }
-            else
-            {
-                google.maps.event.addListener(listenerDraw);
-            }
-        });
-
     }
     
     placePolygon() {
