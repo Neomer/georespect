@@ -1,22 +1,3 @@
-class YaGeoCoder extends IGeoCoder {
-    constructor() {
-        super();
-    }
-    
-    find(map, address) {
-        ymaps.geocode(address, {
-                results: 1
-            }).then(function (res) {
-                var firstGeoObject = res.geoObjects.get(0),
-                    coords = firstGeoObject.geometry.getCoordinates(),
-                    bounds = firstGeoObject.properties.get('boundedBy');
-                map.center = coords;
-                map.setBounds(bounds, {
-                   checkZoomRange: true
-                });
-           });    
-    }
-}
 class GoogleGeoCoder extends IGeoCoder {
     constructor() {
         super();
@@ -41,22 +22,97 @@ function clearDrawingTool() {
     $('#toolPolygon').removeClass("btn-primary").addClass( "btn-default" );
 }
 
+class GMenu extends  google.maps.OverlayView
+{
+    constructor() 
+    {
+        super();
+        this.div_ = document.createElement('div');
+        this.div_.className = 'map-menu';
+        this.div_.innerHTML = '';
+    }
+    
+    onAdd () 
+    {
+        var menu = this;
+        var map = this.getMap();
+        this.getPanes().floatPane.appendChild(this.div_);
+    }
+
+    onRemove() 
+    {
+        google.maps.event.removeListener(this.divListener_);
+        this.div_.parentNode.removeChild(this.div_);
+        this.set('position');
+    }
+
+    draw() {
+        var position = this.get('position');
+        var projection = this.getProjection();
+
+        if (!position || !projection) {
+          return;
+        }
+
+        var point = projection.fromLatLngToDivPixel(position);
+        this.div_.style.top = point.y + 'px';
+        this.div_.style.left = point.x + 'px';
+    }
+
+    close() 
+    {
+        this.setMap(null);
+    }
+
+    open (map, position) 
+    {
+        this.set('position', position);
+        this.setMap(map);
+        this.draw();
+    }
+
+    add(text, proc) 
+    {
+        var div = document.createElement('div');
+        div.className = 'map-menu-element';
+        div.innerHTML = text;
+        google.maps.event.addDomListener(div, 'click', proc);
+        this.div_.appendChild(div);
+    }
+}
+
 class GGeoObject extends IGeoObject 
 {
     constructor(map, object) {
+        printTrace('GGeoObject::GGeoObject()');
         super(map, object);
         this.e = [];
         this.show();
+        this.mnu = new GMenu();
     }
     
     enableEditting() {
-        //super.instance.set
+        printTrace('GGeoObject::enableEditting()');
     }
 
     disableEditting() {
+        printTrace('GGeoObject::disableEditting()');
+        this.disableEvents();
+        super.instance.setEditable(false);
+        super.instance.setDraggable(false);
+    }
+    
+    disableEvents() {
+        printTrace('GGeoObject::disableEvents()');
+        // отключаем обработчики событий
+        for (var i = 0; i < this.e.length; i++)
+        {
+            google.maps.event.removeListener(this.e[i]);
+        }
     }
     
     show() {
+        printTrace('GGeoObject::show()');
         // включаем обработчики событий
         for (var i = 0; i < this.e.length; i++)
         {
@@ -66,549 +122,24 @@ class GGeoObject extends IGeoObject
     }
     
     hide() {
-        // отключаем обработчики событий
-        for (var i = 0; i < this.e.length; i++)
-        {
-            google.maps.event.removeListener(this.e[i]);
-        }
+        printTrace('GGeoObject::hide()');
+        this.disableEvents();
         super.instance.setMap(null);
     }
     
     addMapEvent(event, proc) {
+        printTrace('GGeoObject::addMapEvent() ' + event);
         this.e.push(google.maps.event.addListener(super.map, event, proc));
     }
     
     addElementEvent(event, proc) {
+        printTrace('GGeoObject::addElementEvent() ' + event);
         this.e.push(google.maps.event.addListener(super.instance, event, proc));
     }
 }
 
-class YaMap extends IMap {
-    constructor(div) {
-        super(div);
-        super.setObject(null);
-    }
-    
-    initialize() {
-        var scale = $("input[name=radScale]:checked").val();
-        switch (scale)
-        {
-            case '2000':
-                scale = 18;
-                break;
-            case '5000':
-                scale = 17;
-                break;
-            case '10000':
-                scale = 16;
-                break;
-            default:
-                scale = 18;
-                break;
-        }
-        this.m = new ymaps.Map(super.div, 
-        {
-            center: [55.76, 37.64], 
-            zoom: scale,
-            controls: [
-                "geolocationControl",
-                "typeSelector"
-            ],
-            behaviors: [
-                "drag",
-                "multiTouch",
-                "rightMouseButtonMagnifier"
-            ]
-        });
-        this.m.controls.remove('')
-        console.log(this.m.behaviors);
-        this.yacoder = new YaGeoCoder();
-        this.counter = 0;
-        var instance = this;
-        this.m.events.add('dblclick', function () {
-            if (instance.getObject() !== null )
-            {
-                instance.getObject().options.set('draggable', false);
-                instance.getObject().editor.stopEditing();
-                instance.getObject().editor.stopDrawing();
-                clearDrawingTool();
-            }
-        });
-    }
-    
-    destroy() {
-        this.m.destroy();
-    }
-    
-    
-    get center() {
-        return this.m.getCenter();
-    }
-    
-    set center(coords) {
-        this.m.setCenter(coords);
-        
-    }
-   
-    get centerArray() {
-        return this.m.getCenter();
-    }
- 
-    set centerArray(coords) {
-        this.m.setCenter(coords);
-        
-    }
-    
-    
-    geocode(address) {
-        console.log(address);
-        this.yacoder.find(this, address);
-    }
 
-    placeText() {
-        var map = this.m;
-        this.counter++;
-        
-        
-        var BalloonContentLayout = ymaps.templateLayoutFactory.createClass(
-            '<div class="balloon-texteditor">' +
-                '<input type="text" value="" />' +
-            '</div>',
-        {
 
-            build: function () {
-                BalloonContentLayout.superclass.build.call(this);
-            },
-
-            clear: function () {
-                BalloonContentLayout.superclass.clear.call(this);
-            },
-        });
-
-        var placemark = new ymaps.Placemark([], {
-            iconContent: ''
-        } , {
-            balloonContentLayout: BalloonContentLayout,
-            balloonPanelMaxMapArea: 0,
-            draggable: "true",
-            preset: "islands#redStretchyIcon",
-            iconColor: this.brush.colorHex,
-            openEmptyBalloon: true
-        });
-        this.setObject(placemark);
-        
-        map.geoObjects.add(placemark);
-        
-        placemark.editor.startDrawing();
-        placemark.balloon.open();
-            
-        var globalmap = this;
-        
-        placemark.events.add('balloonopen', 
-            function(e) {
-                globalmap.setObject(placemark);
-            });
-            
-        $(document).on('keydown', '.balloon-texteditor input', function(e)
-        {
-            if (e.keyCode == 13)
-            {
-                if ($(this).val() != '')
-                {
-                    globalmap.getObject().properties.set('iconContent', $(this).val());
-                    globalmap.getObject().balloon.close();
-                    clearDrawingTool();
-                }
-                else
-                {
-                    globalmap.getObject().balloon.close();
-                    map.geoObjects.remove(globalmap.getObject());
-                    globalmap.setObject(null);
-                }
-            }
-        });
-    }
-    placePolyline() {
-        var map = this.m;
-        var polyline = new ymaps.Polyline([
-        ], {}, {
-            // Задаем опции геообъекта.
-            // Цвет с прозрачностью.
-            strokeColor: this.brush.color,
-            // Ширину линии.
-            strokeWidth: 4,
-            // Максимально допустимое количество вершин в ломаной.
-            editorMaxPoints: 60,
-            editorMinPoints:2,
-            draggable: true,
-            // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
-            editorMenuManager: function (items) {
-                items.push({
-                    title: "Удалить линию",
-                    onClick: function () {
-                        map.geoObjects.remove(polyline);
-                    }
-                });
-                items.push({
-                    title: "Завершить редактирование",
-                    onClick: function () {
-                        polyline.options.set('draggable', false);
-                        polyline.editor.stopEditing();
-                        clearDrawingTool();
-               }
-                });
-                return items;
-            }
-        });
-        polyline.events.add('dblclick', function () {
-            console.log('dffdf ' + polyline.editor.state.get('drawing') + ' ' + polyline.editor.state.get('editing'));
-            if (!polyline.editor.state.get('drawing')&&!polyline.editor.state.get('editing'))
-            {
-                polyline.options.set('draggable', true);
-                polyline.editor.startEditing();
-            }
-            else
-            {
-                polyline.options.set('draggable', false);
-                polyline.editor.stopEditing();
-                polyline.editor.stopDrawing();
-                clearDrawingTool();
-            }
-        });
-        this.setObject(polyline);
-        this.m.geoObjects.add(polyline);
-        polyline.editor.startDrawing();
-    }
-    placePolygon() {
-        var map = this.m;
-        var polygon = new ymaps.Polygon([[]], {
-        }, {
-            fillColor: this.brush.fillcolor,
-            strokeColor: this.brush.color,
-            strokeWidth: 4,
-            draggable: true,
-            // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
-            editorMenuManager: function (items) {
-                items.push({
-                    title: "Удалить полигон",
-                    onClick: function () {
-                        map.geoObjects.remove(polygon);
-                    }
-                });
-                items.push({
-                    title: "Завершить редактирование",
-                    onClick: function () {
-                        polygon.editor.stopEditing();
-                        polygon.options.set('draggable', false);
-                        clearDrawingTool();
-                   }
-                });
-                return items;
-            }
-        });
-
-        polygon.events.add('dblclick', function () {
-            if (!polygon.editor.state.get('drawing'))
-            {
-                polygon.options.set('draggable', true);
-                polygon.editor.startEditing();
-            }
-        });
-
-        this.setObject(polygon);
-        this.m.geoObjects.add(polygon);
-        polygon.editor.startDrawing();
-    }
-    
-    scale2000() {
-        this.m.setZoom(18);
-    }
-    
-    scale5000() {
-        this.m.setZoom(17);
-    }
-    
-    scale10000() {
-        this.m.setZoom(16);
-    }
-
-    get zoom() {
-        return this.m.getZoom();
-    }
-}
-class YaMap2 extends IMap {
-    constructor(div) {
-        super(div);
-        super.setObject(null);
-    }
-    
-    initialize() {
-        var scale = $("input[name=radScale]:checked").val();
-        switch (scale)
-        {
-            case '2000':
-                scale = 18;
-                break;
-            case '5000':
-                scale = 17;
-                break;
-            case '10000':
-                scale = 16;
-                break;
-            default:
-                scale = 18;
-                break;
-        }
-        this.m = new ymaps.Map(super.div, 
-        {
-            center: [55.76, 37.64], 
-            zoom: scale,
-            controls: [
-                "geolocationControl",
-                "typeSelector"
-            ],
-            behaviors: [
-                "drag",
-                "multiTouch",
-                "rightMouseButtonMagnifier"
-            ]
-        });
-        this.m.controls.remove('')
-        console.log(this.m.behaviors);
-        this.yacoder = new YaGeoCoder();
-        this.counter = 0;
-        var instance = this;
-    }
-    
-    destroy() {
-        this.m.destroy();
-    }
-    
-    
-    get center() {
-        return this.m.getCenter();
-    }
-    
-    set center(coords) {
-        this.m.setCenter(coords);
-        
-    }
-   
-    get centerArray() {
-        return this.m.getCenter();
-    }
- 
-    set centerArray(coords) {
-        this.m.setCenter(coords);
-        
-    }
-    
-    
-    geocode(address) {
-        console.log(address);
-        this.yacoder.find(this, address);
-    }
-
-    placeText() {
-        var map = this.m;
-        var instance = this;
-        
-        var handler = this.m.events.group().add('click', function(e) {
-            console.log('Map click!');
-            var BalloonContentLayout = ymaps.templateLayoutFactory.createClass(
-                '<div class="balloon-texteditor">' +
-                    '<input type="text" value="" />' +
-                '</div>',
-            {
-
-                build: function () {
-                    BalloonContentLayout.superclass.build.call(this);
-                },
-
-                clear: function () {
-                    BalloonContentLayout.superclass.clear.call(this);
-                },
-            });
-            
-            var placemark = new ymaps.Placemark(e.get('coords'), {
-                iconContent: ''
-            } , {
-                balloonContentLayout: BalloonContentLayout,
-                balloonPanelMaxMapArea: 0,
-                draggable: "true",
-                preset: "islands#redStretchyIcon",
-                iconColor: instance.brush.colorHex,
-                openEmptyBalloon: false
-            });
-            instance.setObject(placemark);
-
-            map.geoObjects.add(placemark);
-            placemark.balloon.open();
-              placemark.events.add('balloonopen', 
-                function(e) {
-                    console.log('onBalloonOpen');
-                    //map.geoObjects.remove(globalmap.getObject());
-                });
-          placemark.events.add('balloonclose', 
-                function(e) {
-                    console.log('onBalloonClose::val() ' + $('.balloon-texteditor input').val());
-                    
-                    if ($('.balloon-texteditor input').val() === '')
-                    {
-                        map.geoObjects.remove(globalmap.getObject());
-                    }
-                });
-
-            $(document).on('keydown', '.balloon-texteditor input', function(e)
-            {
-                if (e.keyCode == 13)
-                {
-                    if ($(this).val() != '')
-                    {
-                        instance.getObject().properties.set('iconContent', $(this).val());
-                        instance.getObject().balloon.close();
-                        clearDrawingTool();
-                    }
-                    else
-                    {
-                        instance.getObject().balloon.close();
-                        map.geoObjects.remove(instance.getObject());
-                        instance.setObject(null);
-                    }
-                }
-            });
-            
-            handler.removeAll();
-            clearDrawingTool();
-        });
-
-    }
-    placePolyline() {
-        var map = this.m;
-        var polyline = new ymaps.Polyline([
-        ], {}, {
-            // Задаем опции геообъекта.
-            // Цвет с прозрачностью.
-            strokeColor: this.brush.color,
-            // Ширину линии.
-            strokeWidth: 4,
-            // Максимально допустимое количество вершин в ломаной.
-            editorMaxPoints: 60,
-            editorMinPoints:2,
-            draggable: true,
-            // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
-            editorMenuManager: function (items) {
-                items.push({
-                    title: "Удалить линию",
-                    onClick: function () {
-                        map.geoObjects.remove(polyline);
-                    }
-                });
-                items.push({
-                    title: "Завершить редактирование",
-                    onClick: function () {
-                        polyline.options.set('draggable', false);
-                        polyline.editor.stopEditing();
-                        clearDrawingTool();
-               }
-                });
-                return items;
-            }
-        });
-        polyline.events.add('dblclick', function () {
-            console.log('dffdf ' + polyline.editor.state.get('drawing') + ' ' + polyline.editor.state.get('editing'));
-            if (!polyline.editor.state.get('drawing')&&!polyline.editor.state.get('editing'))
-            {
-                polyline.options.set('draggable', true);
-                polyline.editor.startEditing();
-            }
-            else
-            {
-                polyline.options.set('draggable', false);
-                polyline.editor.stopEditing();
-                polyline.editor.stopDrawing();
-                clearDrawingTool();
-            }
-        });
-        this.setObject(polyline);
-        this.m.geoObjects.add(polyline);
-        polyline.editor.startDrawing();
-    }
-    placePolygon() {
-        var map = this.m;
-        var polygon = new ymaps.Polygon([[]], {
-        }, {
-            fillColor: this.brush.fillcolor,
-            strokeColor: this.brush.color,
-            strokeWidth: 4,
-            draggable: true,
-            // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
-            editorMenuManager: function (items) {
-                items.push({
-                    title: "Удалить полигон",
-                    onClick: function () {
-                        map.geoObjects.remove(polygon);
-                    }
-                });
-                items.push({
-                    title: "Завершить редактирование",
-                    onClick: function () {
-                        polygon.editor.stopEditing();
-                        polygon.options.set('draggable', false);
-                        clearDrawingTool();
-                   }
-                });
-                return items;
-            }
-        });
-
-        polygon.events.add('dblclick', function () {
-            if (!polygon.editor.state.get('drawing'))
-            {
-                polygon.options.set('draggable', true);
-                polygon.editor.startEditing();
-            }
-        });
-
-        this.setObject(polygon);
-        this.m.geoObjects.add(polygon);
-        polygon.editor.startDrawing();
-    }
-    
-    scale2000() {
-        this.m.setZoom(18);
-    }
-    
-    scale5000() {
-        this.m.setZoom(17);
-    }
-    
-    scale10000() {
-        this.m.setZoom(16);
-    }
-
-    get zoom() {
-        return this.m.getZoom();
-    }
-}
-
-function GMainMenu() 
-{
-    this.div_ = document.createElement('div');
-    this.div_.className = 'map-menu';
-    this.div_.innerHTML = '';
-    this.e = [];
-
-    var menu = this;
-   
-    this.add = function(text, proc) {
-        var div = document.createElement('div');
-        div.className = 'map-menu-element';
-        div.innerHTML = text;
-        this.div_.appendChild(div);
-        google.maps.event.addDomListener(div, 'click', function() {console.log('test');});
-    }
-}
 
 class GMap extends IMap {
     constructor(div) {
@@ -616,62 +147,22 @@ class GMap extends IMap {
         this.counter = 0;
         this.setObject(null);
 
-        var menu = this.mnu;
         var instance = this;
 
-        GMainMenu.prototype = new google.maps.OverlayView();
-        GMainMenu.prototype.onAdd = function() {
-            var menu = this;
-            var map = this.getMap();
-            this.getPanes().floatPane.appendChild(this.div_);
-            this.divListener_ = google.maps.event.addDomListener(map.getDiv(), 'mousedown', function(e) {
-              if (e.target != menu.div_) {
-                menu.close();
-              }
-            }, true);
-        };
-        GMainMenu.prototype.onRemove = function() {
-            google.maps.event.removeListener(this.divListener_);
-            this.div_.parentNode.removeChild(this.div_);
-            this.set('position');
-            this.set('path');
-            this.set('vertex');
-        };
-        GMainMenu.prototype.close = function() {
-            this.setMap(null);
-        };
-        GMainMenu.prototype.draw = function() {
-            var position = this.get('position');
-            /*
-            var projection = this.getProjection();
 
-            if (!position || !projection) {
-              return;
-            }
+        this.mnu = new GMenu();
 
-            var point = projection.fromLatLngToDivPixel(position);
-            this.div_.style.top = point.y + 'px';
-            this.div_.style.left = point.x + 'px';
-            */
-            //console.log(position);
-            this.div_.style.top = position.y + 'px';
-            this.div_.style.left = position.x + 'px';
-        };
-        GMainMenu.prototype.open = function(map, position) {
-            this.set('position', position);
-            this.setMap(map);
-            this.draw();
-        };
-        GMainMenu.prototype.removeVertex = function() {
-            this.close();
-        }
-
-        this.mnu = new GMainMenu();
+        var menu = this.mnu;
         this.mnu.add('Закончить рисование', function() {
-            console.log('Заканчиваем рисование!');
+            instance.stopEditting();
+            menu.close();
         });
         this.mnu.add('Удалить объект', function() {
-            console.log('Удалить объект!');
+            if (instance.getObject() !== null) 
+            {
+                instance.getObject().hide();
+            }
+            menu.close();
         });
     }
     
@@ -711,9 +202,9 @@ class GMap extends IMap {
         var instance = this;
         var map = this.m;
         google.maps.event.addListener(this.m, 'rightclick', function(e) {
-            //console.log(e);
-            instance.mnu.open(map, e.pixel);
-            //instance.stopEditting();
+            printTrace('google.maps.event.addListener()::rightclick ' + e.pixel);
+            instance.mnu.close();
+            instance.mnu.open(map, e.latLng);
         });
     }
     
@@ -724,8 +215,9 @@ class GMap extends IMap {
     stopEditting() {
         if (this.getObject() !== null)
         {
-
+            this.getObject().disableEditting();
         }
+        this.m.setOptions({ draggableCursor: 'default' });
     }
 
     destroy() {
@@ -808,7 +300,8 @@ class GMap extends IMap {
         this.startEditting();
         
         polyline.addMapEvent('click', function(e) {
-            console.log(polyline);
+            //console.log(polyline);
+            printTrace('Click at ' + e.latLng.lat() + ' ' + e.latLng.lng());
             polyline.instance.getPath().push(e.latLng);
         });
 
@@ -900,11 +393,11 @@ class GMap extends IMap {
     }
 }
 
-var yamap = new YaMap2('divMap');
 var selectedTool = null;
 
 
 ymaps.ready(function() {
+    var yamap = new GMap('divMap');
     yamap.initialize();
 
     $('#txtCoordinates').focusout(function() 
