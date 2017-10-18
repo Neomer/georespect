@@ -19,8 +19,10 @@ and open the template in the editor.
 
         <link rel="stylesheet" media="screen" type="text/css" href="spectrum/spectrum.css" />
         <script type="text/javascript" src="spectrum/spectrum.js?a=f2vsdfbssdfvsdfv34343"></script>
-        <script src="js/interfaces.js?a=7mvfhj8fmjv34343"></script>
-        <script src="js/map_processor.js?a=f2sf45mjvfbggnfgnbgcdv34343"></script>
+        <script src="js/interfaces.js?a=7mvfhj8fmjv34343bg"></script>
+        <script src="js/map-g.js?a=32fd"></script>
+        <script src="js/map-ya.js?a=bg32"></script>
+        <script src="js/main-js.js?a=sdf3"></script>
     </head>
     <body>
         <div class="container-fluid top">
@@ -32,7 +34,7 @@ and open the template in the editor.
                         </label>
                         <div>
                             <input class="form-control mb-3 mr-sm-3 mb-sm-0" style="width:80%;display:inline-block;" type="text" id="txtCoordinates" name ="txtCoordinates"  placeholder="55°45′13″N 37°37′16″E" />
-                            <button class="btn btn-primary" type="button" id="btnSearch">Текст</button>
+                            <button class="btn btn-primary" type="button" id="btnSearch">Найти</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -80,7 +82,11 @@ and open the template in the editor.
                             <button class="btn btn-default" type="button" id="toolPolygon">Полигон</button>
                             <button class="btn btn-default" type="button" id="toolPolyline">Линия</button>
                             <button class="btn btn-default" type="button" id="toolText">Текст</button>
-                            <div class="container-fluid top" style="margin-top: 5px;">
+                            <div id="divMarkerText">
+                               <input class="form-control mb-3 mr-sm-3 mb-sm-0" style="width:80%;display:inline-block;" type="text" id="txtCoordinates" name ="txtCoordinates"  placeholder="Введите текст..." />
+                               <button class="btn btn-primary" type="button" id="btnApplyMarkerText">Применить</button>
+                           </div>
+                           <div class="container-fluid top" style="margin-top: 5px;">
                                 <div class="row">
                                     <span>Цвет контура:</span>
                                     <input id="border-color" type="text" />

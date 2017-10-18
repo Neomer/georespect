@@ -50,6 +50,25 @@ class IMap {
         this.d = div;
         this.b = new Brush();
         this.p = null;
+        this.activeMenu = null;
+    }
+    
+    setMenu(m) {
+        printTrace('IMap::setMenu(m)');
+        this.activeMenu = m;
+    }
+    
+    getMenu() { 
+        printTrace('IMap::getMenu()');
+        return this.activeMenu;
+    }
+    
+    closeMenu() {
+        printTrace('IMap::closeMenu()');
+        if (this.activeMenu !== null && this.activeMenu !== 'undefined')
+        {
+            this.activeMenu.close();
+        }
     }
 
     get div() {

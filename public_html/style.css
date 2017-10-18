@@ -82,3 +82,8 @@
 .map-menu-element:hover {
   background: #eee;
 }
+
+#divMarkerText {
+    margin-top: 5px; 
+    display: none;
+}

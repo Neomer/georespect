@@ -270,10 +270,99 @@ class YaMap extends IMap {
         return this.m.getZoom();
     }
 }
+
+class YaMenu 
+{
+    constructor()
+    {
+        printTrace('YaMenu()');
+        //super(null);
+    }
+    
+    setMap(map) {
+        this.m = map;
+    }
+    
+    setElement(object) {
+        
+    }
+    
+}
+
+class YaGeoObject extends IGeoObject 
+{
+    constructor(map, object) {
+        printTrace('YaGeoObject::YaGeoObject()');
+        super(map.getMap(), object);
+        this.e = [];
+        this.show();
+        this.mnu = new YaMenu();
+        this.mnu.setMap(map);
+        this.mnu.setElement(object);
+    }
+
+    get menu() { return this.mnu; }
+    
+    enableEditting() {
+        printTrace('YaGeoObject::enableEditting()');
+        this.enableEvents();
+        super.instance.setEditable(true);
+        super.instance.setDraggable(true);
+    }
+
+    disableEditting() {
+        printTrace('YaGeoObject::disableEditting()');
+        this.disableEvents();
+        super.instance.setEditable(false);
+        super.instance.setDraggable(false);
+    }
+    
+    disableEvents() {
+        printTrace('YaGeoObject::disableEvents()');
+        // отключаем обработчики событий
+        for (var i = 0; i < this.e.length; i++)
+        {
+            google.maps.event.removeListener(this.e[i]);
+        }
+    }
+
+    enableEvents() {
+        printTrace('YaGeoObject::enableEvents()');
+        // включаем обработчики событий
+        for (var i = 0; i < this.e.length; i++)
+        {
+            google.maps.event.addListener(this.e[i]);
+        }
+    }
+    
+    show() {
+        printTrace('YaGeoObject::show()');
+        super.instance.setMap(super.map);
+        this.enableEvents();
+    }
+    
+    hide() {
+        printTrace('YaGeoObject::hide()');
+        this.disableEvents();
+        super.instance.setMap(null);
+    }
+    
+    addMapEvent(event, proc) {
+        printTrace('YaGeoObject::addMapEvent() ' + event);
+        this.e.push(google.maps.event.addListener(super.map, event, proc));
+    }
+    
+    addElementEvent(event, proc) {
+        printTrace('YaGeoObject::addElementEvent() ' + event);
+        this.e.push(google.maps.event.addListener(super.instance, event, proc));
+    }
+}
+
 class YaMap2 extends IMap {
     constructor(div) {
         super(div);
         super.setObject(null);
+        this.mnu = new YaMenu();
     }
     
     initialize() {
@@ -308,12 +397,27 @@ class YaMap2 extends IMap {
             ]
         });
         this.m.controls.remove('')
-        console.log(this.m.behaviors);
         this.yacoder = new YaGeoCoder();
         this.counter = 0;
         var instance = this;
+        this.mnu.setMap(this);
+        this.mnu.setElement(this.m);
+        
+        
+        
+        this.m.events.add('mouseup', function (e) {
+            printTrace('YaMap2::initialize() - mouseup ' + e.get('button'));
+            if (e.get('button') == 2)
+            {
+                
+            }
+        });
     }
     
+    getMap() {
+        return this.m;
+    }
+
     destroy() {
         this.m.destroy();
     }
