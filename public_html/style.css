@@ -87,3 +87,5 @@
     margin-top: 5px; 
     display: none;
 }
+
+.gm-style-iw + div {display: none;}

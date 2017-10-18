@@ -191,6 +191,10 @@ class IGeoObject {
     hide() {
         throw new Error("Calling method hide() of abstract class IGeoObject!");
     }
+    
+    setInfo() {
+        throw new Error("Calling method setInfo() of abstract class IGeoObject!");
+    }
 }
 
 //var DISABLE_TRACE = false;

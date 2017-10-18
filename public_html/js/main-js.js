@@ -149,7 +149,7 @@ ymaps.ready(function() {
         }
     });
     $('#btnApplyMarkerText').click(function(){
-        
+        _map.getObject().setInfo($('#txtMarkerText').val());
     });
     
 });
